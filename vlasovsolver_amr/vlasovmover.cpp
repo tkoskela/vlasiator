@@ -74,15 +74,11 @@ static void writeVelMesh(dccrg::Dccrg<SpatialCell,dccrg::Cartesian_Geometry>& mp
 }
 
 Real calculateTotalMass(dccrg::Dccrg<SpatialCell,dccrg::Cartesian_Geometry>& mpiGrid,const uint popID) {
-   const vector<CellID>& local_cells = getLocalCells();
    Real sum=0.0;
-   for (size_t c=0; c<local_cells.size(); ++c) {
-      const CellID cellID = local_cells[c];
-      SpatialCell* cell = mpiGrid[cellID];
-      
-      for (vmesh::LocalID blockLID=0; blockLID<cell->get_number_of_velocity_blocks(popID); ++blockLID) {
-         const Real* parameters = cell->get_block_parameters(blockLID);
-         const Realf* data = cell->get_data(blockLID);
+   for (const auto& cell: mpiGrid.local_cells()) {
+      for (vmesh::LocalID blockLID=0; blockLID<cell.data->get_number_of_velocity_blocks(popID); ++blockLID) {
+         const Real* parameters = cell.data->get_block_parameters(blockLID);
+         const Realf* data = cell.data->get_data(blockLID);
          Real blockMass = 0.0;
          for (int i=0; i<WID3; ++i) {
             blockMass += data[i];

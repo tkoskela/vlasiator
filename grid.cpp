@@ -989,7 +989,6 @@ bool validateMesh(dccrg::Dccrg<SpatialCell,dccrg::Cartesian_Geometry>& mpiGrid,c
    // Note that we still assume that each spatial cell has a valid mesh 
    // with respect to velocity neighbors, i.e., we only validate the mesh 
    // with respect to spatial neighbors here.
-   const vector<CellID>& cells = getLocalCells();
    int iter=0;
        
    do {
@@ -1010,35 +1009,29 @@ bool validateMesh(dccrg::Dccrg<SpatialCell,dccrg::Cartesian_Geometry>& mpiGrid,c
       // Iterate over all local spatial cells and calculate 
       // the necessary velocity block refinements
       phiprof::start("calc refinements");
-      vector<set<vmesh::GlobalID> > refinements(cells.size());
+      const auto nr_local_cells = std::distance(mpiGrid.local_cells().begin(), mpiGrid.local_cells().end());
+      vector<set<vmesh::GlobalID> > refinements(nr_local_cells);
             
       #pragma omp parallel for
-      for (size_t c=0; c<cells.size(); ++c) {
-         SpatialCell* cell = mpiGrid[cells[c]];
-            
-         // Get all spatial neighbors
-         //const vector<CellID>* neighbors = mpiGrid.get_neighbors_of(cells[c],NEAREST_NEIGHBORHOOD_ID);
-         const auto* neighbors = mpiGrid.get_neighbors_of(cells[c], NEAREST_NEIGHBORHOOD_ID);
-               
-         // Iterate over all spatial neighbors
-         // for (size_t n=0; n<neighbors->size(); ++n) {
-
-         for (const auto& nbrPair : *neighbors) {
-
-            // CellID nbrCellID = (*neighbors)[n];
-            CellID nbrCellID = nbrPair.first;
-            const SpatialCell* nbr = mpiGrid[nbrCellID];
+      for (const auto& cell: mpiGrid.local_cells()) {
+      // alternatively: auto iter = mpiGrid.local_cells().begin()
+      // for (; iter != mpiGrid.local_cells().end(); iter++) {
+         // for (const auto& neighbor: iter->neighbors_of) {
+         // Iterate over all spatial cells considered as neighbors
+         for (const auto& neighbor: cell.neighbors_of) {
+            //const auto nbrCellID = neighbor.id;
+            //const SpatialCell* nbr = neighbor.data;
                   
             // Iterate over all blocks in the spatial neighbor, 
             // and check that the neighbor block does not have 
             // existing grandparent in this cell
-            for (vmesh::LocalID b=0; b<nbr->get_number_of_velocity_blocks(popID); ++b) {
-               vmesh::GlobalID blockGID = nbr->get_velocity_block_global_id(b,popID);
-               vmesh::GlobalID grandParentGID = cell->velocity_block_has_grandparent(blockGID,popID);
-               if (grandParentGID != cell->invalid_global_id()) {
+            for (vmesh::LocalID b=0; b<neighbor.data->get_number_of_velocity_blocks(popID); ++b) {
+               vmesh::GlobalID blockGID = neighbor.data->get_velocity_block_global_id(b,popID);
+               vmesh::GlobalID grandParentGID = cell.data->velocity_block_has_grandparent(blockGID,popID);
+               if (grandParentGID != cell.data->invalid_global_id()) {
                   //cerr << "spatial nbr block " << blockGID << " has gparent " << grandParentGID << endl;
                   
-                  refinements[c].insert(cell->get_velocity_block_parent(popID,blockGID));
+                  refinements[c].insert(cell.data->get_velocity_block_parent(popID,blockGID));
                }
             }
          }
@@ -1048,7 +1041,7 @@ bool validateMesh(dccrg::Dccrg<SpatialCell,dccrg::Cartesian_Geometry>& mpiGrid,c
       // Apply refinements
       phiprof::start("refine mesh");
       bool needAnotherPass=false;
-      vector<vector<pair<vmesh::GlobalID,vmesh::LocalID> > > newBlocks(cells.size());
+      vector<vector<pair<vmesh::GlobalID,vmesh::LocalID> > > newBlocks(nr_local_cells);
             
       #pragma omp parallel for
       for (size_t c=0; c<cells.size(); ++c) {
