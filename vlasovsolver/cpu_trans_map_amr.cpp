@@ -1,5 +1,5 @@
 #include "cpu_1d_ppm_nonuniform.hpp"
-//#include "cpu_1d_ppm_nonuniform_conserving.hpp"
+#include "cpu_1d_ppm.hpp"
 #include "vec.h"
 #include "../grid.h"
 #include "../object_wrapper.h"
@@ -460,6 +460,16 @@ void propagatePencil(Vec* dz, Vec* values, const uint dimension,
       targetValues[i] = Vec(0.0);
       
    }
+
+   // Check if this pencil contains cells of different dz.
+   // If not, we can use an optimized version of the ppm fit
+   bool uniformDz = true;
+   for(uint i = 0; i < lengthOfPencil; ++i) {
+      if(!horizontal_and(dz[i] == dz[0])) {
+         uniformDz = false;
+         break;
+      }
+   }
    
    // Go from 0 to length here to propagate all the cells in the pencil
    for (uint i = 0; i < lengthOfPencil; i++){      
@@ -484,12 +494,6 @@ void propagatePencil(Vec* dz, Vec* values, const uint dimension,
          Vec z_1,z_2;
          z_1 = select(positiveTranslationDirection, 1.0 - z_translation, 0.0);
          z_2 = select(positiveTranslationDirection, 1.0, - z_translation);
-
-         // if( horizontal_or(abs(z_1) > Vec(1.0)) || horizontal_or(abs(z_2) > Vec(1.0)) ) {
-         //    std::cout << "Error, CFL condition violated\n";
-         //    std::cout << "Exiting\n";
-         //    std::exit(1);
-         // }
          
          for (uint planeVector = 0; planeVector < VEC_PER_PLANE; planeVector++) {   
       
@@ -498,9 +502,14 @@ void propagatePencil(Vec* dz, Vec* values, const uint dimension,
             // Dz: is a padded array, pointer can point to the beginning, i + VLASOV_STENCIL_WIDTH will get the right cell.
             // values: transpose function adds VLASOV_STENCIL_WIDTH to the block index, therefore we substract it here, then
             // i + VLASOV_STENCIL_WIDTH will point to the right cell. Complicated! Why! Sad! MVGA!
-            compute_ppm_coeff_nonuniform(dz,
-                                         values + i_trans_ps_blockv_pencil(planeVector, k, i-VLASOV_STENCIL_WIDTH, lengthOfPencil),
-                                         h4, VLASOV_STENCIL_WIDTH, a);
+            if(uniformDz) {
+               compute_ppm_coeff(values + i_trans_ps_blockv_pencil(planeVector, k, i-VLASOV_STENCIL_WIDTH, lengthOfPencil),
+                                 h4, VLASOV_STENCIL_WIDTH, a);
+            } else {
+               compute_ppm_coeff_nonuniform(dz,
+                                            values + i_trans_ps_blockv_pencil(planeVector, k, i-VLASOV_STENCIL_WIDTH, lengthOfPencil),
+                                            h4, VLASOV_STENCIL_WIDTH, a);
+            }
             
             // Compute integral
             const Vec ngbr_target_density =
