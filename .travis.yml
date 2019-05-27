@@ -4,4 +4,4 @@ compiler:
   - gcc
 
 script: 
-  - make testpackage
+  - make -f ./Makefile testpackage
