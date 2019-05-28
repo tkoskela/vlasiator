@@ -86,7 +86,7 @@ LIB_PAPI = -L$(LIBRARY_PREFIX)/papi/lib -lpapi
 
 #header libraries
 
-INC_EIGEN = -I$(LIBRARY_PREFIX)/eigen/
+INC_EIGEN = -I/usr/include/eigen3
 INC_DCCRG = -I$(LIBRARY_PREFIX)/dccrg/
 INC_VECTORCLASS = -I$(LIBRARY_PREFIX)/vectorclass
 INC_FSGRID = -I$(LIBRARY_PREFIX)/fsgrid
