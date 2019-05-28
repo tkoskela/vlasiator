@@ -46,8 +46,6 @@ CXXFLAGS += -DMPICH_IGNORE_CXX_SEEK
 FLAGS = 
 
 #GNU flags:
-CC_BRAND = gcc
-CC_BRAND_VERSION = 5.4.0
 CXXFLAGS += -O3 -fopenmp -funroll-loops -std=c++11 -W -Wall -Wno-unused -fabi-version=0 -mavx2
 testpackage: CXXFLAGS = -O2 -fopenmp -funroll-loops -std=c++0x -fabi-version=0  -mavx
 
@@ -60,8 +58,6 @@ LIB_MPI = -lgomp
 
 #======== Libraries ===========
 
-MPT_VERSION = 7.2.6
-JEMALLOC_VERSION = 5.2.0
 LIBRARY_PREFIX = /home/lib
 
 
