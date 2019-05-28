@@ -3,5 +3,5 @@ language: cpp
 compiler:
   - gcc
 
-script: 
-  - make -f ./Makefile testpackage
+script:
+  - docker run -it tkoskela/vlasiator_ci /bin/bash "make clean && make -j 4 testpackage"
