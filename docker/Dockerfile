@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 MAINTAINER Tuomas Koskela (tuomas.koskela@helsinki.fi)
 
 #gcc, make, OpenMPI, wget, git, silo, eigen, boost
