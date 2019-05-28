@@ -45,6 +45,7 @@ ADD http://icl.cs.utk.edu/projects/papi/downloads/papi-5.4.3.tar.gz .
 RUN tar xf papi-5.4.3.tar.gz
 WORKDIR papi-5.4.3/src
 RUN ./configure --prefix=$LIB/papi && make CC=gcc && make install
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"$LIB/papi/lib"
 
 #Jemalloc
 WORKDIR $LIB
@@ -52,6 +53,7 @@ ADD https://github.com/jemalloc/jemalloc/releases/download/5.2.0/jemalloc-5.2.0.
 RUN tar xf jemalloc-5.2.0.tar.bz2
 WORKDIR jemalloc-5.2.0
 RUN ./configure --prefix=$LIB/jemalloc --with-jemalloc-prefix=je_ && make && make install
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"$LIB/jemalloc/lib"
 
 #Zoltan
 WORKDIR $LIB
@@ -67,3 +69,4 @@ WORKDIR vlasiator
 #RUN git checkout dev
 ENV VLASIATOR_ARCH docker
 RUN make
+
