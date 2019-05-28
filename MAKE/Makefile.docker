@@ -70,9 +70,8 @@ LIBRARY_PREFIX = /home/lib
 INC_BOOST = -I$/usr/include/boost
 LIB_BOOST = -L$/usr/lib/x86_64-linux-gnu -lboost_program_options
 
-INC_ZOLTAN = -I$(LIBRARY_PREFIX)/zoltan/Zoltan_v3.83/build/include
-#LIB_ZOLTAN = -I$(LIBRARY_PREFIX)/zoltan/Zoltan_v3.83/build/lib -lzoltan
-LIB_ZOLTAN = /home/tkoskela/lib/zoltan/Zoltan_v3.83/build/lib/libzoltan.a
+INC_ZOLTAN = -I$(LIBRARY_PREFIX)/zoltan/include
+LIB_ZOLTAN = -L$(LIBRARY_PREFIX)/zoltan/lib -lzoltan
 
 INC_JEMALLOC = -I$(LIBRARY_PREFIX)/jemalloc/include
 LIB_JEMALLOC = -L$(LIBRARY_PREFIX)/jemalloc/lib -ljemalloc
@@ -80,8 +79,8 @@ LIB_JEMALLOC = -L$(LIBRARY_PREFIX)/jemalloc/lib -ljemalloc
 INC_VLSV = -I$(LIBRARY_PREFIX)/vlsv
 LIB_VLSV = -L$(LIBRARY_PREFIX)/vlsv -lvlsv
 
-INC_PROFILE = -I$(LIBRARY_PREFIX)/phiprof/phiprof-2.0-beta/include
-LIB_PROFILE = -L$(LIBRARY_PREFIX)/phiprof/phiprof-2.0-beta/lib -lphiprof
+INC_PROFILE = -I$(LIBRARY_PREFIX)/phiprof-2.0-beta/include
+LIB_PROFILE = -L$(LIBRARY_PREFIX)/phiprof-2.0-beta/lib -lphiprof
 
 INC_PAPI = -I$(LIBRARY_PREFIX)/papi/include
 LIB_PAPI = -L$(LIBRARY_PREFIX)/papi/lib -lpapi
