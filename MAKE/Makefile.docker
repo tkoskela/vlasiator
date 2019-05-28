@@ -61,7 +61,7 @@ LIB_MPI = -lgomp
 #======== Libraries ===========
 
 MPT_VERSION = 7.2.6
-JEMALLOC_VERSION = 5.0.1
+JEMALLOC_VERSION = 5.2.0
 LIBRARY_PREFIX = /home/lib
 
 
