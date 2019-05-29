@@ -7,4 +7,4 @@ before_install:
   - docker pull tkoskela/vlasiator_ci:alpha_v0.1
 
 script:
-  - docker run tkoskela/vlasiator_ci:alpha_v0.1 /bin/sh -c "make clean && make -j 4 testpackage"
+  - docker run tkoskela/vlasiator_ci:alpha_v0.1 /bin/sh -c "git pull && make -j 4 testpackage"
