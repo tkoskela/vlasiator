@@ -3,5 +3,8 @@ language: cpp
 compiler:
   - gcc
 
+before_install:
+  - docker pull tkoskela/vlasiator_ci:alpha_v0.1
+
 script:
-  - docker run -it tkoskela/vlasiator_ci /bin/bash "make clean && make -j 4 testpackage"
+  - docker run tkoskela/vlasiator_ci:alpha_v0.1 /bin/sh -c "git pull && make -j 4 testpackage"
