@@ -1,9 +1,29 @@
+<<<<<<< HEAD
 cores=4
 threads=1
 export OMP_NUM_THREADS=$t
 
 #command for running stuff
 run_command="mpirun -n $cores --allow-run-as-root"
+=======
+
+t=1                   #threads per process
+
+#No idea how many cores we have available on travis. On my laptop I have 4.
+cores_per_node=4
+#Change PBS parameters above + the ones here
+total_units=$(echo $nodes $cores_per_node $ht | gawk '{print $1*$2*$3}')
+units_per_node=$(echo $cores_per_node $ht | gawk '{print $1*$2}')
+tasks=$(echo $total_units $t  | gawk '{print $1/$2}')
+tasks_per_node=$(echo $units_per_node $t  | gawk '{print $1/$2}')
+export OMP_NUM_THREADS=$t
+
+umask 007
+# Launch the OpenMP job to the allocated compute node
+echo "Running $exec on $tasks mpi tasks, with $t threads per task on $nodes nodes ($ht threads per physical core)"
+#command for running stuff
+run_command="mpirun -n $tasks  --allow-run-as-root"
+>>>>>>> upstream/dev
 small_run_command="mpirun -n 1 --allow-run-as-root"
 run_command_tools="mpirun -n 1 --allow-run-as-root"
 
@@ -20,8 +40,11 @@ reference_revision="current"
 # Define test
 source small_test_definitions.sh
 wait
+<<<<<<< HEAD
 
 run_tests=( 1 2 3 )
 
+=======
+>>>>>>> upstream/dev
 # Run tests
 source run_tests.sh

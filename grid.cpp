@@ -87,10 +87,12 @@ void initializeGrids(
    char **argc,
    dccrg::Dccrg<SpatialCell,dccrg::Cartesian_Geometry>& mpiGrid,
    FsGrid< std::array<Real, fsgrids::bfield::N_BFIELD>, 2> & perBGrid,
-   FsGrid< std::array<Real, fsgrids::bfield::N_BFIELD>, 2> & perBDt2Grid,
    FsGrid< std::array<Real, fsgrids::bgbfield::N_BGB>, 2>& BgBGrid,
    FsGrid< std::array<Real, fsgrids::moments::N_MOMENTS>, 2> & momentsGrid,
    FsGrid< std::array<Real, fsgrids::moments::N_MOMENTS>, 2> & momentsDt2Grid,
+   FsGrid< std::array<Real, fsgrids::efield::N_EFIELD>, 2> & EGrid,
+   FsGrid< std::array<Real, fsgrids::egradpe::N_EGRADPE>, 2> & EGradPeGrid,
+   FsGrid< std::array<Real, fsgrids::volfields::N_VOL>, 2> & volGrid,
    FsGrid< fsgrids::technical, 2>& technicalGrid,
    SysBoundary& sysBoundaries,
    Project& project
@@ -185,7 +187,7 @@ void initializeGrids(
    if (P::isRestart) {
       logFile << "Restart from "<< P::restartFileName << std::endl << writeVerbose;
       phiprof::start("Read restart");
-      if (readGrid(mpiGrid,P::restartFileName) == false) {
+      if (readGrid(mpiGrid,perBGrid,EGrid,technicalGrid,P::restartFileName) == false) {
          logFile << "(MAIN) ERROR: restarting failed" << endl;
          exit(1);
       }
@@ -193,7 +195,7 @@ void initializeGrids(
    
       //initial state for sys-boundary cells, will skip those not set to be reapplied at restart
       phiprof::start("Apply system boundary conditions state");
-      if (sysBoundaries.applyInitialState(mpiGrid, project) == false) {
+      if (sysBoundaries.applyInitialState(mpiGrid, perBGrid, project) == false) {
          cerr << " (MAIN) ERROR: System boundary conditions initial state was not applied correctly." << endl;
          exit(1);
       }
@@ -225,7 +227,7 @@ void initializeGrids(
       // Initial state for sys-boundary cells
       phiprof::stop("Apply initial state");
       phiprof::start("Apply system boundary conditions state");
-      if (sysBoundaries.applyInitialState(mpiGrid, project) == false) {
+      if (sysBoundaries.applyInitialState(mpiGrid, perBGrid, project) == false) {
          cerr << " (MAIN) ERROR: System boundary conditions initial state was not applied correctly." << endl;
          exit(1);
       }
@@ -276,6 +278,7 @@ void initializeGrids(
    // update complete cell spatial data for full stencil (
    SpatialCell::set_mpi_transfer_type(Transfer::ALL_SPATIAL_DATA);
    mpiGrid.update_copies_of_remote_neighbors(FULL_NEIGHBORHOOD_ID);
+   
    phiprof::stop("Fetch Neighbour data");
    
    if (P::isRestart == false) {
@@ -288,40 +291,24 @@ void initializeGrids(
       phiprof::stop("Init moments");
    }
    
-   phiprof::start("Initial fsgrid coupling");
-   // Couple FSGrids to mpiGrid. Note that the coupling information is shared
-   // between them.
-   technicalGrid.setupForGridCoupling(cells.size());
-   
-   // Each dccrg cell may have to communicate with multiple fsgrid cells, if they are on a lower refinement level.
-   // Calculate the corresponding fsgrid ids for each dccrg cell and set coupling for each fsgrid id.
-   for(auto& dccrgId : cells) {
-      const auto fsgridIds = mapDccrgIdToFsGridGlobalID(mpiGrid, dccrgId);
-      
-      for (auto fsgridId : fsgridIds) {
-         
-         technicalGrid.setGridCoupling(fsgridId, myRank);
-      }
-   }
-   
-   technicalGrid.finishGridCoupling();
-   phiprof::stop("Initial fsgrid coupling");
-   
    phiprof::start("setProjectBField");
    project.setProjectBField(perBGrid, BgBGrid, technicalGrid);
    perBGrid.updateGhostCells();
    BgBGrid.updateGhostCells();
+   EGrid.updateGhostCells();
    phiprof::stop("setProjectBField");
    
    phiprof::start("Finish fsgrid setup");
-   getFieldDataFromFsGrid<fsgrids::N_BFIELD>(perBGrid, technicalGrid, mpiGrid, cells, CellParams::PERBX);
-   getBgFieldsAndDerivativesFromFsGrid(BgBGrid, technicalGrid, mpiGrid, cells);
-   
-   // WARNING this means moments and dt2 moments are the same here.
    feedMomentsIntoFsGrid(mpiGrid, cells, momentsGrid,false);
-   feedMomentsIntoFsGrid(mpiGrid, cells, momentsDt2Grid,false);
+   if(!P::isRestart) {
+      // WARNING this means moments and dt2 moments are the same here at t=0, which is a feature so far.
+      feedMomentsIntoFsGrid(mpiGrid, cells, momentsDt2Grid,false);
+   } else {
+      feedMomentsIntoFsGrid(mpiGrid, cells, momentsDt2Grid,true);
+   }
    momentsGrid.updateGhostCells();
    momentsDt2Grid.updateGhostCells();
+   technicalGrid.updateGhostCells(); // This needs to be done at some point
    phiprof::stop("Finish fsgrid setup");
    
    phiprof::stop("Set initial state");
@@ -551,13 +538,17 @@ void balanceLoad(dccrg::Dccrg<SpatialCell,dccrg::Cartesian_Geometry>& mpiGrid, S
          exit(1);
       }
    }
-
-   // Record ranks of face neighbors
-   phiprof::start("set face neighbor ranks");   
-   setFaceNeighborRanks( mpiGrid );
-   phiprof::stop("set face neighbor ranks");
    
-   phiprof::stop("Init solvers");   
+   phiprof::stop("Init solvers");
+   
+   // Record ranks of face neighbors
+   if(P::amrMaxSpatialRefLevel > 0) {
+      phiprof::start("set face neighbor ranks");
+      setFaceNeighborRanks( mpiGrid );
+      phiprof::stop("set face neighbor ranks");
+   }
+   
+   
    phiprof::stop("Balancing load");
 }
 
@@ -993,16 +984,6 @@ void initializeStencils(dccrg::Dccrg<SpatialCell,dccrg::Cartesian_Geometry>& mpi
    neighborhood.clear();
    neighborhood.push_back({{0, 0, -1}});
    mpiGrid.add_neighborhood(SHIFT_P_Z_NEIGHBORHOOD_ID, neighborhood);
-   
-   // Add face neighbors, needed for Poisson solver
-   neighborhood.clear();
-   neighborhood.push_back({{-1, 0, 0}});
-   neighborhood.push_back({{+1, 0, 0}});
-   neighborhood.push_back({{ 0,-1, 0}});
-   neighborhood.push_back({{ 0,+1, 0}});
-   neighborhood.push_back({{ 0, 0,-1}});
-   neighborhood.push_back({{ 0, 0,+1}});
-   mpiGrid.add_neighborhood(POISSON_NEIGHBORHOOD_ID, neighborhood);
 }
 
 bool validateMesh(dccrg::Dccrg<SpatialCell,dccrg::Cartesian_Geometry>& mpiGrid,const uint popID) {

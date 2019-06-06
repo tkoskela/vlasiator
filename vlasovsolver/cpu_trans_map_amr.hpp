@@ -178,7 +178,7 @@ CellID selectNeighbor(const dccrg::Dccrg<SpatialCell,dccrg::Cartesian_Geometry> 
 void propagatePencil(Vec* dz, Vec* values, const uint dimension, const uint blockGID,
                      const Realv dt,
                      const vmesh::VelocityMesh<vmesh::GlobalID,vmesh::LocalID> &vmesh,
-                     const uint lengthOfPencil, bool debugflag);
+                     const uint lengthOfPencil);
 
 void copy_trans_block_data_amr(
     SpatialCell** source_neighbors,
@@ -193,12 +193,6 @@ setOfPencils buildPencilsWithNeighbors( const dccrg::Dccrg<SpatialCell,dccrg::Ca
 					setOfPencils &pencils, CellID startingId,
 					std::vector<CellID> ids, uint dimension, 
 					std::vector<uint> path);
-
-void get_seed_ids(const dccrg::Dccrg<SpatialCell,dccrg::Cartesian_Geometry>& mpiGrid,
-                  const std::vector<CellID> &localPropagatedCells,
-                  const uint dimension,
-                  std::vector<CellID> &seedIds);
-
 
 bool trans_map_1d_amr(const dccrg::Dccrg<spatial_cell::SpatialCell,dccrg::Cartesian_Geometry>& mpiGrid,
                   const std::vector<CellID>& localPropagatedCells,

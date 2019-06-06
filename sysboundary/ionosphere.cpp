@@ -219,15 +219,6 @@ namespace SBC {
                cellCenterCoords[0] += 0.5 * technicalGrid.DX;
                cellCenterCoords[1] += 0.5 * technicalGrid.DY;
                cellCenterCoords[2] += 0.5 * technicalGrid.DZ;
-               const auto refLvl = mpiGrid.get_refinement_level(mpiGrid.get_existing_cell(cellCenterCoords));
-
-               if(refLvl == -1) {
-                  cerr << "Error, could not get refinement level of remote DCCRG cell " << __FILE__ << " " << __LINE__ << endl;
-               }
-
-               creal dx = P::dx_ini * pow(2,-refLvl);
-               creal dy = P::dy_ini * pow(2,-refLvl);
-               creal dz = P::dz_ini * pow(2,-refLvl);
 
                if(getR(cellCenterCoords[0],cellCenterCoords[1],cellCenterCoords[2],this->geometry,this->center) < this->radius) {
                   technicalGrid.get(i,j,k)->sysBoundaryFlag = this->getIndex();
@@ -242,6 +233,7 @@ namespace SBC {
 
    bool Ionosphere::applyInitialState(
       const dccrg::Dccrg<SpatialCell,dccrg::Cartesian_Geometry>& mpiGrid,
+      FsGrid< std::array<Real, fsgrids::bfield::N_BFIELD>, 2> & perBGrid,
       Project &project
    ) {
       vector<CellID> cells = mpiGrid.get_cells();
@@ -762,6 +754,9 @@ namespace SBC {
       templateCell.parameters[CellParams::VY_DT2] = templateCell.parameters[CellParams::VY];
       templateCell.parameters[CellParams::VZ_DT2] = templateCell.parameters[CellParams::VZ];
       templateCell.parameters[CellParams::RHOQ_DT2] = templateCell.parameters[CellParams::RHOQ];
+      templateCell.parameters[CellParams::P_11_DT2] = templateCell.parameters[CellParams::P_11];
+      templateCell.parameters[CellParams::P_22_DT2] = templateCell.parameters[CellParams::P_22];
+      templateCell.parameters[CellParams::P_33_DT2] = templateCell.parameters[CellParams::P_33];
    }
    
    Real Ionosphere::shiftedMaxwellianDistribution(
