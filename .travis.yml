@@ -9,4 +9,4 @@ before_install:
 
 script:
   - docker run tkoskela/vlasiator_ci:alpha_v0.4 /bin/bash -c "git pull && make clean && make -j 2 testpackage"
- # - docker run tkoskela/vlasiator_ci:alpha_v0.4 /bin/bash -c "git pull && make -j 4 testpackage && cp vlasiator testpackage/ && cd testpackage && ./small_test_docker.sh"
+  - docker run tkoskela/vlasiator_ci:alpha_v0.4 /bin/bash -c "git pull && make clean && make -j 2 testpackage && cp vlasiator testpackage/ && cd testpackage && ./small_test_docker.sh"
