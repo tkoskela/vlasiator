@@ -69,4 +69,3 @@ WORKDIR vlasiator
 #RUN git checkout dev
 ENV VLASIATOR_ARCH docker
 RUN make
-
