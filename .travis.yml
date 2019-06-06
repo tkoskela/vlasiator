@@ -5,8 +5,8 @@ compiler:
   - gcc
 
 before_install:
-  - docker pull tkoskela/vlasiator_ci:alpha_v0.3
+  - docker pull tkoskela/vlasiator_ci:alpha_v0.4
 
 script:
-  - docker run tkoskela/vlasiator_ci:alpha_v0.3 /bin/bash -c "git pull && make -j 4 testpackage"
-  - docker run tkoskela/vlasiator_ci:alpha_v0.3 /bin/bash -c "git pull && make -j 4 testpackage && cp vlasiator testpackage/ && cd testpackage && ./small_test_docker.sh"
+  - docker run tkoskela/vlasiator_ci:alpha_v0.4 /bin/bash -c "git pull && make -j 4 testpackage"
+  - docker run tkoskela/vlasiator_ci:alpha_v0.4 /bin/bash -c "git pull && make -j 4 testpackage && cp vlasiator testpackage/ && cd testpackage && ./small_test_docker.sh"
